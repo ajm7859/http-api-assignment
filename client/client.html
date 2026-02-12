@@ -5,6 +5,106 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+    const handleResponse = async (response) => {
+      
+      //Grab the content section
+      const content = document.querySelector('#content');
+
+      //Based on the status code, display something
+      switch(response.status) {
+        case 200: 
+          content.innerHTML = `<b>Success</b>`;
+          break;
+        case 400: 
+          content.innerHTML = '<b>Bad Request</b>';
+          break;
+        case 401:
+          content.innerHTML = '<b>Unauthorized</b>';
+          break;
+        case 403:
+          content.innerHTML = `<b>Forbidden</b>`;
+          break;
+        case 404:
+          content.innerHTML = `<b>Not Found</b>`;
+          break;
+        case 500:
+          content.innerHTML = `<b>Internal Server Error</b>`;
+          break;
+        case 501:
+          content.innerHTML = `<b>Not Implemented</b>`;
+          break;
+        default:
+          content.innerHTML = `Error code not implemented by client.`;
+          break;
+      }
+
+      const rawText = await response.text();
+      console.log(rawText);
+
+      const contentType = response.headers.get('content-type') || '';
+      let message = '';
+      let id = '';
+
+      if (contentType.includes('application/json')) {
+        const obj = JSON.parse(rawText);
+
+        if (obj.message) {
+          message = obj.message;
+        }
+
+        if (obj.id) {
+          id = obj.id;
+        }
+      }
+
+      else if (contentType.includes('text/xml')) {
+        const messageStart = rawText.indexOf('<message>');
+        const messageEnd = rawText.indexOf('</message>');
+
+        if (messageStart !== -1 && messageEnd !== -1) {
+          message = rawText.substring(messageStart + 9, messageEnd);
+        }
+
+        const idStart = rawText.indexOf('<id>');
+        const idEnd = rawText.indexOf('</id>');
+
+        if (idStart !== -1 && idEnd !== -1) {
+          id = rawText.substring(idStart + 4, idEnd);
+        }
+      }
+
+      if (message) {
+        content.innerHTML += `<p>${message}</p>`;
+      }
+    };
+
+    const sendGet = async () => {
+      const page = document.querySelector('#page').value;
+      const type = document.querySelector('#type').value;
+
+      const response = await fetch(page, {
+        method: 'GET',
+        headers: {
+          'Accept': type,
+        },
+      });
+
+      handleResponse(response);
+    };
+
+    const init = () => {
+      const sendBtn = document.querySelector('#send');
+      
+      const sendRequest = (e) => {
+        e.preventDefault();
+        sendGet();
+        return false;
+      };
+      
+      sendBtn.addEventListener('click', sendRequest);
+    };
+
+    window.onload = init;
 
   </script>
 </head>
